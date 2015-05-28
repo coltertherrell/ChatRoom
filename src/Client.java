@@ -1,10 +1,3 @@
-/*
- * Author: Colter Therrell
- * 
- * Title: Client.java
- * 
- * Usage: Simple client with minimal GUI to be used in server/client model
- */
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
