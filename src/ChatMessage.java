@@ -3,6 +3,7 @@ import java.io.Serializable;
 
 public class ChatMessage implements Serializable
 {
+	protected static final long serialVersionUID = 1L;
 	static final int WHO = 0, MESSAGE = 1, LOGOUT = 2;
 	private int type;
 	private String msg;

@@ -21,6 +21,8 @@ public class Server
 	{
 		this.gui = gui;
 		this.port = port;
+		dateFormat = new SimpleDateFormat();
+		clientArray = new ArrayList<ClientThread>();
 	}
 	
 	public void start()
@@ -32,7 +34,7 @@ public class Server
 
 			while(running) 
 			{
-				display("Waiting for connection on port  " + port + ".");
+				display("Waiting for connection on port " + port + ".");
 				Socket socket = serverSocket.accept();  	
 				if(!running)
 				{
@@ -56,15 +58,19 @@ public class Server
 					catch(IOException e) {}
 				}
 			}
-			catch(Exception e){}
+			catch(Exception e)
+			{
+			}
 		}
-		catch (IOException e) {} 
-		catch (ClassNotFoundException e){}
+		catch (IOException e) 
+		{
+		} 
 	}
 	
 	protected void stop()
 	{
 		running = false;
+		display("Server stopped");
 		try
 		{
 			new Socket("localhost", port);
@@ -74,25 +80,26 @@ public class Server
 	
 	private void display(String msg)
 	{
-		String message = dateFormat.format(new Date()) + " " + msg;
-		if(gui == null)
+		String message = "[" + dateFormat.format(new Date()) + "]: " + msg;
+		if(gui != null)
 		{
 			gui.addEvent(message + "\n");
 		}
+		
 	}
 	
 	private synchronized void broadcast(String msg)
 	{
-		String time = dateFormat.format(new Date());
-		String message = time + " " + msg + "\n";
-		if(gui == null)
+		String time = "[" + dateFormat.format(new Date());
+		String message = time + "]: " + msg + "\n";
+		if(gui != null)
 		{
-			gui.addRoom(message);
+			gui.addEvent(message);
 		}
 		for(int i = clientArray.size(); --i >= 0;)
 		{
 			ClientThread clientThread = clientArray.get(i);
-			if(clientThread.writeMessage(message))
+			if(!clientThread.writeMessage(message))
 			{
 				clientArray.remove(i);
 				display(clientThread.username + " removed from list of users");
@@ -121,119 +128,123 @@ public class Server
 	}
 
 	
-	class ClientThread extends Thread
+	class ClientThread extends Thread 
 	{
 		Socket socket;
 		ObjectInputStream streamIn;
 		ObjectOutputStream streamOut;
+		int clientID;
 		String username;
 		ChatMessage chatMessage;
 		String date;
-		int clientID;
-		
-		ClientThread(Socket socket) throws ClassNotFoundException
+
+		ClientThread(Socket socket) 
 		{
 			clientID = ++connectionID;
 			this.socket = socket;
 			try
 			{
-				streamIn = new ObjectInputStream(socket.getInputStream());
 				streamOut = new ObjectOutputStream(socket.getOutputStream());
+				streamIn  = new ObjectInputStream(socket.getInputStream());
 				username = (String) streamIn.readObject();
-				display(username + " has connected.");
+				display(username + " has connected to the chatroom");
 			}
-			catch(IOException e)
+			catch (IOException e) 
 			{
 				return;
 			}
-			date = new Date().toString();
+			catch (ClassNotFoundException e) 
+			{
+			}
+            date = new Date().toString() + "\n";
 		}
-		public void run()
+
+		public void run() 
 		{
 			boolean running = true;
-			while(running)
+			while(running) 
 			{
-				try
+				try 
 				{
 					chatMessage = (ChatMessage) streamIn.readObject();
 				}
-				catch(IOException e)
+				catch (IOException e) 
 				{
-					break;
-				} 
-				catch (ClassNotFoundException e) 
+					break;				
+				}
+				catch(ClassNotFoundException e) 
 				{
 					break;
 				}
-				
 				String message = chatMessage.getMessage();
-				
-				switch(chatMessage.getType())
+
+				switch(chatMessage.getType()) 
 				{
-				case ChatMessage.WHO:
-					for(int i = 0; i < clientArray.size(); ++i)
-					{
-						ClientThread clientThread = clientArray.get(i);
-						writeMessage((i+1) + ") " + clientThread.username);
-					}
-					break;
-				
+
 				case ChatMessage.MESSAGE:
 					broadcast(username + ": " + message);
 					break;
-						
 				case ChatMessage.LOGOUT:
 					display(username + " has disconnected");
 					running = false;
 					break;
+				case ChatMessage.WHO:
+					writeMessage("List of the users currently connected " + "\n");
+					for(int i = 0; i < clientArray.size(); ++i) 
+					{
+						ClientThread clientThread = clientArray.get(i);
+						writeMessage((i+1) + ") " + clientThread.username + "\n");
+					}
+					break;
 				}
 			}
-			//remove(clientID);
+			remove(clientID);
 			close();
 		}
-
-	
-		private void close()
+		
+		private void close() 
 		{
-			try
+			try 
 			{
-				if(streamOut != null)
-				{
-					streamOut.close();
-				}
+				if(streamOut != null) streamOut.close();
 			}
-			catch(Exception e){}
-			try
+			catch(Exception e) 
 			{
-				if(streamIn != null)
+			}
+			try 
+			{
+				if(streamIn != null) 
 				{
 					streamIn.close();
 				}
 			}
-			catch(Exception e){}
-		
-			try
+			catch(Exception e) 
+			{		
+			}
+			try 
 			{
-				if(socket!= null)
+				if(socket != null)
 				{
 					socket.close();
 				}
 			}
-			catch(Exception e){}
+			catch (Exception e) {}
 		}
-	
-		private boolean writeMessage(String msg)
-		{
-			if(!socket.isConnected())
+
+		private boolean writeMessage(String msg) {
+			if(!socket.isConnected()) 
 			{
 				close();
 				return false;
 			}
-			try
+			try 
 			{
 				streamOut.writeObject(msg);
 			}
-			catch(IOException e){}
+			catch(IOException e) 
+			{
+				display("Error sending message");
+			}
 			return true;
 		}
 	}

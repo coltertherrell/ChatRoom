@@ -1,117 +1,167 @@
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.net.InetAddress;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
 
-
-public class Client implements Runnable
+public class Client
 {
+	private static ClientGUI gui;
+	private ObjectInputStream streamIn;
+	private ObjectOutputStream streamOut;
+	private Socket socket;
 	
-	private static final int PORT = 1234;
+	private int port;
+	private String server;
+	private String username;
 	
-	public static void main(String[] args) throws Exception 
+	Client(String server, int port, String username, ClientGUI gui)
 	{
-		JFrame clientMainFrame = new JFrame("Client");
-		JPanel clientNorthPanel = new JPanel();
-		JPanel clientSouthPanel = new JPanel();
-		JPanel clientMiddlePanel = new JPanel();
-		final JLabel clientStatus = new JLabel("Client not running");
-		
-		clientMainFrame.getContentPane().setLayout(new BorderLayout());
-		
-		clientMainFrame.setPreferredSize(new Dimension(500, 500));
-		
-		clientNorthPanel.setPreferredSize(new Dimension(150, 150));
-		clientSouthPanel.setPreferredSize(new Dimension(150, 150));
-		
-		clientMainFrame.add(clientNorthPanel, BorderLayout.NORTH);
-		clientMainFrame.add(clientSouthPanel, BorderLayout.SOUTH);
-		clientMainFrame.add(clientMiddlePanel, BorderLayout.CENTER);
-		
-		JButton startButton = new JButton("Start Client");
-		final JButton connectButton = new JButton("Connect to server");
-		final JButton disconnectButton = new JButton("Disconnect");
-		
-		connectButton.setVisible(false);
-		disconnectButton.setVisible(false);
-		
-		clientNorthPanel.add(startButton);
-		clientSouthPanel.add(clientStatus);
-		clientMiddlePanel.add(connectButton);
-		clientMiddlePanel.add(disconnectButton);
-		
-		clientMainFrame.setVisible(true);
-		clientMainFrame.pack();
-		
-		startButton.addActionListener(new ActionListener()
+		this.server = server;
+		this.username = username;
+		this.port = port;
+		Client.gui = gui;
+	}
+	
+	public boolean start()
+	{
+		try
 		{
-			public void actionPerformed(ActionEvent e)
+			socket = new Socket(server, port);
+		}
+		catch(Exception e)
+		{
+			display("Error connecting");
+			return false;
+		}
+		
+		display("Connected to " + socket.getInetAddress() + ":" + socket.getPort());
+		
+		try
+		{
+			streamIn = new ObjectInputStream(socket.getInputStream());
+			streamOut = new ObjectOutputStream(socket.getOutputStream());
+		}
+		catch(IOException ex)
+		{
+			display("Error creating IO streams: ");
+			return false;
+		}
+		
+		new ServerListener().start();
+		
+		try
+		{
+			streamOut.writeObject(username);
+		}
+		catch(IOException exc)
+		{
+			display("Login error");
+			disconnect();
+			return false;
+		}
+		return true;
+	}
+	private void display(String msg)
+	{
+		if(gui != null)
+		{
+			gui.addToTextArea(msg + "\n");
+		}
+	}
+	
+	void send(ChatMessage msg)
+	{
+		try
+		{
+			streamOut.writeObject(msg);
+		}
+		catch(IOException e)
+		{
+			display("Error sending message");
+		}
+	}
+	
+	void disconnect()
+	{
+		if(gui != null)
+		{
+			gui.fail();
+		}
+		try
+		{
+			if(streamIn != null)
+			{
+				streamIn.close();
+			}
+		}
+		catch(Exception e)
+		{
+			display("Error closing input stream");
+		}
+		
+		try
+		{
+			if(streamOut != null)
+			{
+				streamOut.close();
+			}
+		}
+		catch(Exception e)
+		{
+			display("Error closing output stream");
+		}
+		try
+		{
+			if(socket != null)
+			{
+				socket.close();
+			}
+		}
+		catch(Exception e)
+		{
+			display("Error closing socket");
+		}
+	}
+	
+	public static void main(String[] args) 
+	{
+		int port = 1234;
+		String address = "localhost";
+		String username = "Username";
+		
+		Client client = new Client(address, port, username, gui);
+		
+		client.disconnect();
+	}
+	
+	class ServerListener extends Thread 
+	{
+		public void run()
+		{
+			while(true)
 			{
 				try
-				{				
-					System.out.println("Client running, press connect to server...");
-					clientStatus.setText("Client running, press connect to server...");
-					connectButton.setVisible(true);
-					disconnectButton.setVisible(true);
-					
-				}
-				catch(Exception ex)
 				{
-					ex.printStackTrace();
-				}
-			}
-		});
-		
-		connectButton.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				try 
-				{
-					Socket clientSocket = new Socket(InetAddress.getLocalHost(), PORT);
-					System.out.println("Client successfully connected!");
-					clientStatus.setText("Client successfully connected!");
-					if(clientSocket.isClosed()) //not working
+					String message = (String) streamIn.readObject();
+					if(gui != null)
 					{
-						System.out.println("Server has closed");
-						clientStatus.setText("Server has closed");
+						gui.addToTextArea(message);
 					}
-				} 
-				catch (Exception ex) 
+				}
+				catch(IOException e)
 				{
-					ex.printStackTrace();
+					display("Connection closed");
+					gui.fail();
+					break;
+				} 
+				catch (ClassNotFoundException e) 
+				{
+					e.printStackTrace();
 				}
 			}
-		});
-		
-		disconnectButton.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				try 
-				{
-					
-				} 
-				catch (Exception ex) 
-				{
-					ex.printStackTrace();
-				}
-			}
-		});
+		}
 	}
-
-	@Override
-	public void run() {
-		// TODO 
 		
-	}
-
 }

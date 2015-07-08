@@ -18,7 +18,7 @@ public class ServerGUI extends JFrame implements ActionListener, WindowListener
 {
 	private static final long serialVersionUID = 1L;
 	private JButton storp;
-	private JTextArea chatroom, event;
+	private JTextArea event;
 	private JTextField portField;
 	private Server server;
 	
@@ -29,7 +29,7 @@ public class ServerGUI extends JFrame implements ActionListener, WindowListener
 		
 		JPanel topPanel = new JPanel();
 		topPanel.add(new JLabel("Port: "));
-		portField = new JTextField(" " + port);
+		portField = new JTextField("" + port);
 		topPanel.add(portField);
 		
 		storp = new JButton("Start");
@@ -37,14 +37,10 @@ public class ServerGUI extends JFrame implements ActionListener, WindowListener
 		topPanel.add(storp);
 		add(topPanel, BorderLayout.NORTH);
 		
-		JPanel centerPanel = new JPanel(new GridLayout(2, 1));
-		chatroom = new JTextArea(128, 128);
-		chatroom.setEditable(false);
-		addRoom("Chat room. \n");
-		centerPanel.add(new JScrollPane(chatroom));
+		JPanel centerPanel = new JPanel(new GridLayout(1, 1));
 		event = new JTextArea(56, 56);
 		event.setEditable(false);
-		addEvent("Event log \n");
+		addEvent("Event Log \n");
 		centerPanel.add(new JScrollPane(event));
 		add(centerPanel);
 		
@@ -52,15 +48,9 @@ public class ServerGUI extends JFrame implements ActionListener, WindowListener
 		setSize(800, 600);
 		setVisible(true);
 	}
-	void addRoom(String s)
-	{
-		chatroom.append(s);
-		chatroom.setCaretPosition(chatroom.getText().length() - 1);
-	}
 	void addEvent(String s)
 	{
 		event.append(s);
-		event.setCaretPosition(chatroom.getText().length() - 1);
 	}
 	
 	public void actionPerformed(ActionEvent e)
