@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 
-
+//Server
 public class Server
 {
 	private ServerGUI gui;

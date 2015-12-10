@@ -13,7 +13,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-
+//ServerGUI
 public class ServerGUI extends JFrame implements ActionListener, WindowListener
 {
 	private static final long serialVersionUID = 1L;

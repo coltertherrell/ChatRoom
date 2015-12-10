@@ -12,7 +12,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-
+//ClientGUI
 public class ClientGUI extends JFrame implements ActionListener
 {
 	private static final long serialVersionUID = 1L;

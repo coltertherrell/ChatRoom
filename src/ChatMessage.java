@@ -1,6 +1,6 @@
 import java.io.Serializable;
 
-
+//ChatMessage
 public class ChatMessage implements Serializable
 {
 	protected static final long serialVersionUID = 1L;
